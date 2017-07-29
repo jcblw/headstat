@@ -1,0 +1,21 @@
+{
+  "name": "headstats",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "isomorphic-fetch": "^2.2.1",
+    "json-api-normalizer": "^0.4.1",
+    "jwt-decode": "^2.2.0",
+    "query-string": "^5.0.0",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1",
+    "react-scripts": "1.0.10",
+    "recharts": "^1.0.0-alpha.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
