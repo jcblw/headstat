@@ -85,7 +85,8 @@ class SDK {
         });
 
       let fillDate = firstDate;
-      while (this.getMonthKey(fillDate) !== this.getMonthKey(lastDate)) {
+      const now = new Date();
+      while (this.getMonthKey(fillDate) !== this.getMonthKey(now)) {
         const key = this.getMonthKey(fillDate);
         if (!aggregate[key]) {
           aggregate[key] = [];
@@ -132,7 +133,8 @@ class SDK {
         });
 
       let fillDate = firstDate;
-      while (this.getDayKey(fillDate) !== this.getDayKey(lastDate)) {
+      const now = new Date();
+      while (this.getDayKey(fillDate) !== this.getDayKey(now)) {
         const key = this.getDayKey(fillDate);
         if (!aggregate[key]) {
           aggregate[key] = [];
@@ -178,7 +180,8 @@ class SDK {
         });
 
       let fillDate = firstDate;
-      while (this.getWeekKey(fillDate) !== this.getWeekKey(lastDate)) {
+      const now = new Date();
+      while (this.getWeekKey(fillDate) !== this.getWeekKey(now)) {
         const key = this.getWeekKey(fillDate);
         if (!aggregate[key]) {
           aggregate[key] = [];
