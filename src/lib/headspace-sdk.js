@@ -6,7 +6,7 @@ require('./date-extensions');
 
 class SDK {
   constructor(baseURL) {
-    this.baseURL = baseURL || 'https://api.prod.headspace.com';
+    this.baseURL = baseURL || '/api';
   }
 
   request(endpoint, method, data) {
