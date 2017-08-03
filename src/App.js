@@ -32,6 +32,7 @@ class App extends Component {
           sortBy: firstDate,
         };
       })
+      .filter(aggregat => aggregat.sessions < 10)
       .sort((prev, next) => {
         return (
           new Date(prev.sortBy).valueOf() - new Date(next.sortBy).valueOf()

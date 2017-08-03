@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "express": "^4.15.3",
     "isomorphic-fetch": "^2.2.1",
     "json-api-normalizer": "^0.4.1",
     "jwt-decode": "^2.2.0",

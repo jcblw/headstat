@@ -90,7 +90,7 @@ class SDK {
         const key = this.getMonthKey(fillDate);
         if (!aggregate[key]) {
           aggregate[key] = [];
-          aggregate[key].date = fillDate;
+          aggregate[key].date = new Date(fillDate);
         }
         fillDate.setMonth(fillDate.getMonth() + 1);
       }
@@ -138,6 +138,7 @@ class SDK {
         const key = this.getDayKey(fillDate);
         if (!aggregate[key]) {
           aggregate[key] = [];
+          aggregate[key].date = new Date(fillDate);
         }
         fillDate.setDate(fillDate.getDate() + 1);
       }
@@ -185,6 +186,7 @@ class SDK {
         const key = this.getWeekKey(fillDate);
         if (!aggregate[key]) {
           aggregate[key] = [];
+          aggregate[key].date = new Date(fillDate);
         }
         fillDate.setDate(fillDate.getDate() + 1);
       }
