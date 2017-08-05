@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
-import { sdk } from './lib/headspace-sdk';
+import { connect } from 'react-redux';
+import { setEndpointHost, setEndpointPath } from 'redux-json-api';
 import {
   BarChart,
   Bar,
@@ -12,7 +11,27 @@ import {
   CartesianGrid,
 } from 'recharts';
 
+import { setUserAuth } from './actions/user';
+import './App.css';
+
 const CHART_COLOR = '#f58b44';
+
+function mapStateToProps(state) {
+  return state;
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    setupAPI({ host, endpoint }) {
+      dispatch(setEndpointHost(host));
+      dispatch(setEndpointPath(endpoint));
+    },
+    setAuth(token) {
+      dispatch(setUserAuth(token));
+    },
+    allUserActivities() {},
+  };
+}
 
 class App extends Component {
   constructor(...args) {
@@ -40,7 +59,10 @@ class App extends Component {
       });
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    const { setupAPI } = this.props;
+    setupAPI(this.props);
+  }
 
   getMonthString(_date) {
     if (!_date) return 'Invalid Date';
@@ -58,32 +80,34 @@ class App extends Component {
   }
 
   getAggregation() {
-    let daily;
-    let weekly;
-    let monthly;
-
-    sdk
-      .getCompletionsByDay()
-      .then(d => {
-        daily = this.aggregate(d, this.formatTitle);
-        return sdk.getCompletionsByWeek();
-      })
-      .then(w => {
-        weekly = this.aggregate(w, this.formatTitle);
-        return sdk.getCompletionsByMonth();
-      })
-      .then(m => {
-        monthly = this.aggregate(m, this.getMonthString);
-        this.setState({
-          daily,
-          weekly,
-          monthly,
-        });
-      });
+    // let daily;
+    // let weekly;
+    // let monthly;
+    //
+    // sdk
+    //   .getCompletionsByDay()
+    //   .then(d => {
+    //     daily = this.aggregate(d, this.formatTitle);
+    //     return sdk.getCompletionsByWeek();
+    //   })
+    //   .then(w => {
+    //     weekly = this.aggregate(w, this.formatTitle);
+    //     return sdk.getCompletionsByMonth();
+    //   })
+    //   .then(m => {
+    //     monthly = this.aggregate(m, this.getMonthString);
+    //     this.setState({
+    //       daily,
+    //       weekly,
+    //       monthly,
+    //     });
+    //     return Promise.resolve();
+    //   });
   }
 
   onChange(e) {
-    sdk.setAuth(e.target.value);
+    const { setAuth } = this.props;
+    setAuth(e.target.value);
     this.getAggregation();
   }
 
@@ -133,4 +157,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);

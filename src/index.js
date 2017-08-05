@@ -1,8 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import Entry from './Entry';
 import registerServiceWorker from './registerServiceWorker';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(
+  <Entry host="https://api.prod.headspace.com" endpoint="/content" />,
+  document.getElementById('root')
+);
 registerServiceWorker();
