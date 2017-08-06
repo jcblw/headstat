@@ -1,7 +1,7 @@
 import jwtDecode from 'jwt-decode';
 import userConstants from '../constants/user';
-import { setAccessToken } from 'redux-json-api';
 import { setUserData, setJWTError } from '../actions/user';
+import { setToken } from '../actions/json-api';
 
 const middleware = store => next => action => {
   switch (action.type) {
@@ -17,7 +17,7 @@ const middleware = store => next => action => {
       if (err) {
         return store.dispatch(setJWTError(err));
       }
-      store.dispatch(setAccessToken(action.token));
+      store.dispatch(setToken(action.token));
       return store.dispatch(setUserData(data));
     }
     default:

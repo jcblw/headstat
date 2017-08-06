@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { setEndpointHost, setEndpointPath } from 'redux-json-api';
 import {
   BarChart,
   Bar,
@@ -12,24 +11,38 @@ import {
 } from 'recharts';
 
 import { setUserAuth } from './actions/user';
+import { setOptions, getResource } from './actions/json-api';
+import { select } from './selectors/json-api';
+import { byDate } from './selectors/aggregation';
+import { aggregationToChartMap } from './selectors/charts';
 import './App.css';
 
 const CHART_COLOR = '#f58b44';
 
 function mapStateToProps(state) {
-  return state;
+  const userActivities = select('userActivities', null, state);
+  return {
+    user: state.user,
+    token: state.jsonapi.token,
+    aggregation: aggregationToChartMap(
+      byDate('day', userActivities),
+      () => 'foo'
+    ),
+  };
 }
 
 function mapDispatchToProps(dispatch) {
   return {
     setupAPI({ host, endpoint }) {
-      dispatch(setEndpointHost(host));
-      dispatch(setEndpointPath(endpoint));
+      dispatch(setOptions({ host, endpoint }));
     },
     setAuth(token) {
       dispatch(setUserAuth(token));
     },
-    allUserActivities() {},
+    allUserActivities({ userId }) {
+      dispatch(getResource('user-activities', { limit: -1, userId }));
+      // dispatch(readEndpoint(`user-activities?limit=-1&userId=${userId}`));
+    },
   };
 }
 
@@ -37,26 +50,6 @@ class App extends Component {
   constructor(...args) {
     super(...args);
     this.state = {};
-  }
-
-  aggregate(data, formatTitle) {
-    return Object.keys(data)
-      .map(date => {
-        const firstDate = data[date][0]
-          ? data[date][0].updatedAt
-          : data[date].date;
-        return {
-          name: formatTitle(firstDate),
-          sessions: data[date].length,
-          sortBy: firstDate,
-        };
-      })
-      .filter(aggregat => aggregat.sessions < 10)
-      .sort((prev, next) => {
-        return (
-          new Date(prev.sortBy).valueOf() - new Date(next.sortBy).valueOf()
-        );
-      });
   }
 
   componentDidMount() {
@@ -80,39 +73,20 @@ class App extends Component {
   }
 
   getAggregation() {
-    // let daily;
-    // let weekly;
-    // let monthly;
-    //
-    // sdk
-    //   .getCompletionsByDay()
-    //   .then(d => {
-    //     daily = this.aggregate(d, this.formatTitle);
-    //     return sdk.getCompletionsByWeek();
-    //   })
-    //   .then(w => {
-    //     weekly = this.aggregate(w, this.formatTitle);
-    //     return sdk.getCompletionsByMonth();
-    //   })
-    //   .then(m => {
-    //     monthly = this.aggregate(m, this.getMonthString);
-    //     this.setState({
-    //       daily,
-    //       weekly,
-    //       monthly,
-    //     });
-    //     return Promise.resolve();
-    //   });
+    const { allUserActivities, user } = this.props;
+    allUserActivities(user);
   }
 
-  onChange(e) {
+  onTokenChange(e) {
     const { setAuth } = this.props;
     setAuth(e.target.value);
-    this.getAggregation();
+    setTimeout(() => this.getAggregation(), 0);
   }
 
+  onFilterChange() {}
+
   render() {
-    const { weekly, daily, monthly, authToken } = this.state;
+    const { aggregation, token } = this.props;
     return (
       <div className="App">
         <h2>Headstats</h2>
@@ -120,31 +94,16 @@ class App extends Component {
         <input
           id="auth-token"
           type="text"
-          value={authToken}
-          onChange={this.onChange.bind(this)}
+          value={token}
+          onChange={this.onTokenChange.bind(this)}
         />
+        <select value="day">
+          <option value="day">Daily</option>
+          <option value="week">Weekly</option>
+          <option value="month">Monthly</option>
+        </select>
         <h1>Daily Sessions</h1>
-        <BarChart width={window.innerWidth} height={400} data={daily}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <CartesianGrid strokeDasharray="3 3" />
-          <Tooltip />
-          <Legend />
-          <Bar type="monotone" dataKey="sessions" fill={CHART_COLOR} />
-        </BarChart>
-
-        <h1>Weekly Sessions</h1>
-        <BarChart width={window.innerWidth} height={400} data={weekly}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <CartesianGrid strokeDasharray="3 3" />
-          <Tooltip />
-          <Legend />
-          <Bar type="monotone" dataKey="sessions" fill={CHART_COLOR} />
-        </BarChart>
-
-        <h1>Monthly Sessions</h1>
-        <BarChart width={window.innerWidth} height={400} data={monthly}>
+        <BarChart width={window.innerWidth} height={400} data={aggregation}>
           <XAxis dataKey="name" />
           <YAxis />
           <CartesianGrid strokeDasharray="3 3" />
