@@ -18,8 +18,16 @@ export const jsonapi = (state = initialState, action) => {
       });
     }
     case jsonAPIConstants.JSON_API_CACHE_RESOURCE: {
+      const cache = Object.keys(action.data).reduce((accum, key) => {
+        accum[key] = Object.assign(
+          {},
+          state.cache[key] || {},
+          action.data[key]
+        );
+        return accum;
+      }, {});
       return Object.assign({}, state, {
-        cache: Object.assign({}, state.cache, action.data),
+        cache: Object.assign({}, state.cache, cache),
       });
     }
 

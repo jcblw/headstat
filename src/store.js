@@ -1,6 +1,7 @@
 import { createStore, applyMiddleware, combineReducers, compose } from 'redux';
 import thunk from 'redux-thunk';
 import user from './reducers/user';
+import charts from './reducers/charts';
 import { jsonapi } from './reducers/json-api';
 import jwtParse from './middleware/jwt-parse';
 import jsonAPIMiddleware from './middleware/json-api';
@@ -11,8 +12,9 @@ const composeEnhancers =
     : compose;
 
 const reducer = combineReducers({
-  user,
+  charts,
   jsonapi,
+  user,
 });
 
 const enhancer = composeEnhancers(
