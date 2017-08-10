@@ -1,9 +1,11 @@
+import { format, lastDayOfWeek, startOfWeek } from 'date-fns';
+
 const CHART_COLOR = '#f58b44';
 
 const breakdownHelpers = {
   month: {
     getKey(date) {
-      return `${date.getFullYear()}-${date.getMonth() + 1}`;
+      return `${format(date, 'YYYY-MM')}`;
     },
     incrementDate(date) {
       date.setMonth(date.getMonth() + 1);
@@ -11,7 +13,7 @@ const breakdownHelpers = {
   },
   day: {
     getKey(date) {
-      return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      return `${format(date, 'YYYY-MM-DD')}`;
     },
     incrementDate(date) {
       date.setDate(date.getDate() + 1);
@@ -19,9 +21,7 @@ const breakdownHelpers = {
   },
   week: {
     getKey(date) {
-      return `${date.getFullYear()}-${date.getMonth() + 1}-${getWeekNumber(
-        date
-      )}`;
+      return `${format(startOfWeek(date), 'YYYY-MM-DD')}`;
     },
     incrementDate(date) {
       date.setDate(date.getDate() + 1);

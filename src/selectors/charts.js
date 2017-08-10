@@ -1,3 +1,5 @@
+import { format, lastDayOfWeek, startOfWeek } from 'date-fns';
+
 export const aggregationToChartMap = (aggregation, formatTitle) => {
   return Object.keys(aggregation)
     .map(date => {
@@ -61,21 +63,23 @@ export const aggregationToBars = aggregation => {
   return Object.keys(keyHash).map(key => keyHash[key]);
 };
 
-const basicTitle = _date => {
-  if (!_date) return 'Invalid Date';
-  const date = new Date(_date);
-  const formatter = new Intl.DateTimeFormat('en', { month: 'short' });
-  const month = formatter.format(date);
-  return `${month} ${date.getDate() + 1}`;
-};
-
 export const titleFormatters = {
-  day: basicTitle,
+  day(_date) {
+    if (!_date) return 'Invalid Date';
+    const date = new Date(_date);
+    return format(date, 'MMM D');
+  },
   month(_date) {
     if (!_date) return 'Invalid Date';
     const date = new Date(_date);
-    const formatter = new Intl.DateTimeFormat('en', { month: 'long' });
-    return formatter.format(date);
+    return format(date, 'MMMM');
   },
-  week: basicTitle,
+  week(_date) {
+    if (!_date) return 'Invalid Date';
+    const date = new Date(_date);
+    return `${format(startOfWeek(date), 'MMM D')} - ${format(
+      lastDayOfWeek(date),
+      'MMM D'
+    )}`;
+  },
 };
