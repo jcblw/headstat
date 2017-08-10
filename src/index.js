@@ -5,7 +5,7 @@ import Entry from './Entry';
 import registerServiceWorker from './registerServiceWorker';
 
 ReactDOM.render(
-  <Entry host={'http://localhost:4000'} endpoint="/api/content" />,
+  <Entry host={window.location.origin} endpoint="/api/content" />,
   document.getElementById('root')
 );
 registerServiceWorker();
