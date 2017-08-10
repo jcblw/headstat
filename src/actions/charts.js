@@ -6,3 +6,17 @@ export const setChartsFilter = filter => {
     filter,
   };
 };
+
+export const setChartsBreakdown = breakdown => {
+  return {
+    type: chartsConstants.CHARTS_SET_BREAKDOWN,
+    breakdown,
+  };
+};
+
+export const setChartsMetric = metric => {
+  return {
+    type: chartsConstants.CHARTS_SET_METRIC,
+    metric,
+  };
+};

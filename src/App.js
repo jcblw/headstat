@@ -11,7 +11,11 @@ import {
 } from 'recharts';
 
 import { setUserAuth } from './actions/user';
-import { setChartsFilter } from './actions/charts';
+import {
+  setChartsFilter,
+  setChartsBreakdown,
+  setChartsMetric,
+} from './actions/charts';
 import { setOptions, getResource } from './actions/json-api';
 import { select, relationshipsToArray } from './selectors/json-api';
 import { byDate } from './selectors/aggregation';
@@ -19,25 +23,30 @@ import {
   aggregationToChartMap,
   allFilters,
   titleFormatters,
+  aggregationToBars,
+  aggregationToChartMapTime,
 } from './selectors/charts';
 import './App.css';
 
-const CHART_COLOR = '#f58b44';
-
 function mapStateToProps(state) {
-  const userActivities = select('userActivities', null, state);
-  const { filter } = state.charts;
+  const userActivities = select('userActivityCompletions', null, state);
+  const { filter, breakdown, metric } = state.charts;
   const formatTitle = titleFormatters[filter];
+  const dateAggregate = byDate(filter, userActivities, {
+    total: breakdown === 'total',
+  });
+  const aggregationFn =
+    metric === 'sessions' ? aggregationToChartMap : aggregationToChartMapTime;
   return {
     user: state.user,
     token: state.jsonapi.token,
     allFilters: allFilters(),
     filter,
+    breakdown,
+    metric,
     userActivities,
-    aggregation: aggregationToChartMap(
-      byDate(filter, userActivities),
-      formatTitle
-    ),
+    bars: aggregationToBars(dateAggregate),
+    aggregation: aggregationFn(dateAggregate, formatTitle),
   };
 }
 
@@ -50,19 +59,27 @@ function mapDispatchToProps(dispatch) {
       dispatch(setUserAuth(token));
     },
     allUserActivities({ userId }) {
-      dispatch(getResource('user-activities', { limit: -1, userId }));
+      dispatch(getResource('user-activity-completions', { limit: -1, userId }));
     },
-    allActivities(userActivities) {
+    allVariations(userActivities) {
       userActivities.forEach(userActivity => {
-        const relationships = relationshipsToArray(userActivity);
-        relationships.forEach(({ data: { type, id } }) => {
-          dispatch(getResource(type, id));
-        });
+        const { variation, activity } = userActivity.relationships;
+        dispatch(
+          getResource('activity-variations', variation.data.id, {
+            activityId: activity.data.id,
+          })
+        );
       });
       // dispatch(getResource('user-activities', { limit: -1, userId }));
     },
     setChartsFilter(filter) {
       dispatch(setChartsFilter(filter));
+    },
+    setChartsBreakdown(breakdown) {
+      dispatch(setChartsBreakdown(breakdown));
+    },
+    setChartsMetric(metric) {
+      dispatch(setChartsMetric(metric));
     },
   };
 }
@@ -79,10 +96,9 @@ class App extends Component {
   }
 
   componentDidUpdate({ userActivities: prevUserActivities }) {
-    const { userActivities, allActivities } = this.props;
+    const { userActivities, allVariations } = this.props;
     if (userActivities.length && !prevUserActivities.length) {
-      console.log('all activities');
-      allActivities(userActivities);
+      allVariations(userActivities);
     }
   }
 
@@ -102,21 +118,33 @@ class App extends Component {
     setChartsFilter(e.target.value);
   }
 
+  onBreakdownChange(e) {
+    const { setChartsBreakdown } = this.props;
+    setChartsBreakdown(e.target.value);
+  }
+
+  onMetricChange(e) {
+    const { setChartsMetric } = this.props;
+    setChartsMetric(e.target.value);
+  }
+
   render() {
     const {
       aggregation,
+      aggregationTime,
       token,
       filter,
+      metric,
+      breakdown,
       allFilters,
       userActivities,
+      bars,
     } = this.props;
     const filterLabels = { day: 'Daily', week: 'Weekly', month: 'Monthly' };
+    const hasFullyLoaded = userActivities.every(a => a.variation);
     return (
       <div className="App">
         <h2>Headstats</h2>
-        <pre styles={{ textAlign: 'left' }}>
-          {JSON.stringify(userActivities, null, '  ')}
-        </pre>
         <label htmlFor="auth-token">Auth Token</label>
         <input
           id="auth-token"
@@ -133,17 +161,35 @@ class App extends Component {
             );
           })}
         </select>
+        <select value={breakdown} onChange={this.onBreakdownChange.bind(this)}>
+          <option value="total">Total</option>
+          <option value="not-total">By activity</option>
+        </select>
+        <select value={metric} onChange={this.onMetricChange.bind(this)}>
+          <option value="sessions">Sessions</option>
+          <option value="minutes">Minutes</option>
+        </select>
         <h1>
-          {filterLabels[filter]} Sessions
+          {filterLabels[filter]} {metric}
         </h1>
-        <BarChart width={window.innerWidth} height={300} data={aggregation}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <CartesianGrid strokeDasharray="3 5 3 5" />
-          <Tooltip />
-          <Legend />
-          <Bar type="monotone" dataKey="sessions" fill={CHART_COLOR} />
-        </BarChart>
+        {metric === 'sessions' || hasFullyLoaded
+          ? <BarChart width={window.innerWidth} height={300} data={aggregation}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <CartesianGrid strokeDasharray="3 5 3 5" />
+              <Tooltip />
+              <Legend />
+              {bars.map(bar =>
+                <Bar
+                  type="monotone"
+                  stackId="b"
+                  key={bar.key}
+                  dataKey={bar.key}
+                  fill={bar.color}
+                />
+              )}
+            </BarChart>
+          : 'loading...'}
       </div>
     );
   }

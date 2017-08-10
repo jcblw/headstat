@@ -5,7 +5,9 @@ export const normalize = (data, store) => {
   const hydratedRelationships = Object.keys(
     relationships
   ).reduce((accum, key) => {
-    const { data: { type, id } } = relationships[key];
+    const { data } = relationships[key];
+    if (!data) return accum;
+    const { type, id } = data;
     accum[key] = select(type, id, store);
     return accum;
   }, {});

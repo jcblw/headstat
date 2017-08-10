@@ -1,6 +1,5 @@
 const express = require('express');
 const app = express();
-const SDK = require('../lib/headspace-sdk');
 const proxy = require('express-http-proxy');
 const port = process.env.PORT || 4000;
 

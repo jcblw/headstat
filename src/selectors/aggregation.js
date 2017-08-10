@@ -1,3 +1,5 @@
+const CHART_COLOR = '#f58b44';
+
 const breakdownHelpers = {
   month: {
     getKey(date) {
@@ -34,48 +36,60 @@ function getWeekNumber(date) {
   return Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 8.64e7 + 1) / 7);
 }
 
-export const byDate = (breakdown, activities) => {
+export const byDate = (breakdown, activities, options = {}) => {
   if (!activities.length) return {};
   const aggregate = {};
+  const { total } = options;
   const { getKey, incrementDate } =
     breakdownHelpers[breakdown] || breakdownHelpers.day;
   let firstDate;
   let lastDate;
-  activities
-    .filter(activity => activity.status === 'COMPLETE')
-    .forEach(activity => {
-      const { updatedAt } = activity;
-      const createdAtDate = new Date(updatedAt);
-      const dateKey = getKey(createdAtDate);
+  activities.forEach(activity => {
+    const { completedAt, activityGroupName } = activity;
+    const createdAtDate = new Date(completedAt);
+    const dateKey = getKey(createdAtDate);
 
-      if (!firstDate) {
+    if (!firstDate) {
+      firstDate = createdAtDate;
+    } else {
+      if (createdAtDate.valueOf() < firstDate.valueOf()) {
         firstDate = createdAtDate;
-      } else {
-        if (createdAtDate.valueOf() < firstDate.valueOf()) {
-          firstDate = createdAtDate;
-        }
       }
+    }
 
-      if (!lastDate) {
+    if (!lastDate) {
+      lastDate = createdAtDate;
+    } else {
+      if (createdAtDate.valueOf() > lastDate.valueOf()) {
         lastDate = createdAtDate;
-      } else {
-        if (createdAtDate.valueOf() > lastDate.valueOf()) {
-          lastDate = createdAtDate;
-        }
       }
+    }
 
-      if (!aggregate[dateKey]) {
-        aggregate[dateKey] = [];
+    if (!aggregate[dateKey]) {
+      aggregate[dateKey] = {};
+      aggregate[dateKey].date = activity.completedAt;
+    }
+
+    if (total) {
+      if (!aggregate[dateKey].sessions) {
+        aggregate[dateKey].sessions = [];
       }
-      aggregate[dateKey].push(activity);
-    });
+      aggregate[dateKey].sessions.push(activity);
+      return;
+    }
+
+    if (!aggregate[dateKey][activityGroupName]) {
+      aggregate[dateKey][activityGroupName] = [];
+    }
+    aggregate[dateKey][activityGroupName].push(activity);
+  });
 
   let fillDate = firstDate;
   const now = new Date();
   while (getKey(fillDate) !== getKey(now)) {
     const key = getKey(fillDate);
     if (!aggregate[key]) {
-      aggregate[key] = [];
+      aggregate[key] = {};
       aggregate[key].date = new Date(fillDate);
     }
     incrementDate(fillDate);
