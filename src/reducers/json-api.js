@@ -30,6 +30,9 @@ export const jsonapi = (state = initialState, action) => {
         cache: Object.assign({}, state.cache, cache),
       });
     }
+    case jsonAPIConstants.JSON_API_CLEAR_CACHE: {
+      return Object.assign({}, state, { cache: {} });
+    }
 
     default:
       return state;

@@ -48,3 +48,9 @@ export const errorFetching = (modelName, id, error) => {
     error,
   };
 };
+
+export const clearCache = () => {
+  return {
+    type: jsonAPIConstants.JSON_API_CLEAR_CACHE,
+  };
+};

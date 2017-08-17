@@ -1,6 +1,4 @@
-import { format, lastDayOfWeek, startOfWeek } from 'date-fns';
-
-const CHART_COLOR = '#f58b44';
+import { format, startOfWeek, getHours } from 'date-fns';
 
 const breakdownHelpers = {
   month: {
@@ -21,20 +19,13 @@ const breakdownHelpers = {
   },
   week: {
     getKey(date) {
-      return `${format(startOfWeek(date), 'YYYY-MM-DD')}`;
+      return `${format(startOfWeek(date, { weekStartsOn: 1 }), 'YYYY-MM-DD')}`;
     },
     incrementDate(date) {
       date.setDate(date.getDate() + 1);
     },
   },
 };
-
-function getWeekNumber(date) {
-  var d = new Date(+date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-  return Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 8.64e7 + 1) / 7);
-}
 
 export const byDate = (breakdown, activities, options = {}) => {
   if (!activities.length) return {};
@@ -96,3 +87,67 @@ export const byDate = (breakdown, activities, options = {}) => {
   }
   return aggregate;
 };
+
+export const byTimeOfDay = activities => {
+  if (!activities.length) return [];
+  const aggregate = {};
+  activities.forEach(activity => {
+    const { completedAt } = activity;
+    const date = new Date(completedAt);
+    const hour = getHours(date);
+    if (!aggregate[hour]) {
+      aggregate[hour] = 0;
+    }
+
+    aggregate[hour] += 1;
+  });
+  let fill = 0;
+  while (fill < 24) {
+    if (!aggregate[fill]) {
+      aggregate[fill] = 0;
+    }
+    fill += 1;
+  }
+  // transform for charts
+  return Object.keys(aggregate).sort((prev, next) => prev - next).map(key => ({
+    amount: aggregate[key],
+    name: formatTime(key),
+  }));
+};
+
+export const metitatesTimeOfDay = timeOfDayAgg => {
+  const sections = {
+    morning: [4, 5, 6, 7, 8, 9, 10].map(formatTime),
+    afternoon: [11, 12, 13, 14, 15, 16].map(formatTime),
+    night: [17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3].map(formatTime),
+  };
+  const counts = {
+    morning: 0,
+    afternoon: 0,
+    night: 0,
+  };
+  timeOfDayAgg.forEach(agg => {
+    Object.keys(sections).forEach(section => {
+      if (sections[section].indexOf(agg.name) !== -1) {
+        counts[section] += agg.amount;
+      }
+    });
+  });
+  return Object.keys(counts)
+    .map(key => [key, counts[key]])
+    .reduce((cur, prev) => {
+      if (cur[1] < prev[1]) {
+        return prev;
+      }
+      return cur;
+    })
+    .shift();
+};
+
+function formatTime(_time) {
+  const time = +_time;
+  if (!time) return '12 AM';
+  let m = time >= 12 ? 'PM' : 'AM';
+  let hour = time > 12 ? time - 12 : time;
+  return `${hour} ${m}`;
+}

@@ -14,6 +14,13 @@ export const setUserData = data => {
   };
 };
 
+export const setUserId = id => {
+  return {
+    type: userConstants.USER_SET_ID,
+    id,
+  };
+};
+
 export const setJWTError = err => {
   return {
     type: userConstants.USER_JWT_DECODE_ERROR,
