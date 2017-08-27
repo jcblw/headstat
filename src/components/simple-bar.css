@@ -1,0 +1,34 @@
+.simple-bar--container,
+.simple-bar--barConainer {
+  width: 100%;
+}
+
+.simple-bar--bar {
+  background-color: #f47d31;
+  height: 8px;
+  border-radius: 8px;
+}
+
+.simple-bar--barGrey {
+  background-color: #e5e5e5;
+}
+
+.simple-bar--label,
+.simple-bar--value {
+  white-space: nowrap;
+  font-size: 12px;
+  padding-top: 8px;
+  padding-bottom: 16px;
+  margin: 0;
+}
+
+.simple-bar--label {
+  font-weight: 700;
+  padding-left: 8px;
+}
+
+.simple-bar--value {
+  color: #f47d31;
+  padding-left: 8px;
+  padding-right: 8px;
+}

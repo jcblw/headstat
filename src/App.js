@@ -1,16 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  Legend,
-  Tooltip,
-  YAxis,
-  XAxis,
-  CartesianGrid,
-} from 'recharts';
+import SimpleBar from './components/simple-bar';
+import Filters, { filterLabels } from './components/filters';
 
 import { setUserAuth, setUserId } from './actions/user';
 import {
@@ -34,6 +25,23 @@ import {
 } from './selectors/charts';
 import './App.css';
 
+function getLongestRunStreak(sessions) {
+  let longestRunStreak = 0;
+  let currentStreak = 0;
+  sessions.forEach(s => {
+    if (s.sessions > 0) {
+      currentStreak += 1;
+    } else {
+      currentStreak = 0;
+    }
+
+    if (currentStreak > longestRunStreak) {
+      longestRunStreak = currentStreak;
+    }
+  });
+  return longestRunStreak;
+}
+
 function mapStateToProps(state) {
   const userActivities = select('userActivityCompletions', null, state);
   const { filter, breakdown, metric } = state.charts;
@@ -41,9 +49,16 @@ function mapStateToProps(state) {
   const dateAggregate = byDate(filter, userActivities, {
     total: breakdown === 'total',
   });
-  const aggregationFn =
-    metric === 'sessions' ? aggregationToChartMap : aggregationToChartMapTime;
-  const timeOfDay = byTimeOfDay(userActivities);
+  const ats = aggregationToChartMap(dateAggregate, formatTitle);
+  const atm = aggregationToChartMapTime(dateAggregate, formatTitle);
+  const aggregation = ats.map((a, i) => Object.assign({}, a, atm[i]));
+  const longestRunStreak = getLongestRunStreak(
+    aggregationToChartMap(
+      byDate('day', userActivities, { total: 'total' }),
+      formatTitle
+    )
+  );
+
   return {
     user: state.user,
     userId: state.user.userId,
@@ -54,9 +69,8 @@ function mapStateToProps(state) {
     metric,
     userActivities,
     bars: aggregationToBars(dateAggregate),
-    aggregation: aggregationFn(dateAggregate, formatTitle),
-    timeOfDay,
-    meditatesTimeOfDay: metitatesTimeOfDay(timeOfDay),
+    aggregation,
+    longestRunStreak,
   };
 }
 
@@ -159,107 +173,106 @@ class App extends Component {
       bars,
       breakdown,
       filter,
-      meditatesTimeOfDay,
       metric,
       timeOfDay,
       token,
       userActivities,
       userId,
+      longestRunStreak,
     } = this.props;
-    // console.log(timeOfDay);
-    const filterLabels = { day: 'Daily', week: 'Weekly', month: 'Monthly' };
+
     const hasFullyLoaded = userActivities.every(a => a.variation);
-    const lastMonth = aggregation[aggregation.length - 2];
-    const prevMonth = aggregation[aggregation.length - 3];
+    const aggMax = aggregation
+      .map(a => a.minutes || 0)
+      .reduce((n1, n2) => Math.max(n1, n2), 0);
+    const totalMinutes = aggregation.reduce(
+      (n1, n2) => n1 + (n2.minutes || 0),
+      0
+    );
+    const totalSessions = aggregation.reduce(
+      (n1, n2) => n1 + (n2.sessions || 0),
+      0
+    );
+
     return (
       <div className="App">
         <h2>Headstats</h2>
-        <div>
-          <label htmlFor="auth-token">Auth Token</label>
-          <input
-            id="auth-token"
-            type="text"
-            value={token}
-            onChange={this.onTokenChange.bind(this)}
-          />
-          <label htmlFor="user-id">User Id</label>
-          <input
-            id="user-id"
-            type="text"
-            value={userId}
-            onChange={this.onUserIdChange.bind(this)}
-          />
+        <div className="u-flex">
+          <div className="u-flex--1">
+            <label htmlFor="auth-token">Auth Token</label>
+            <input
+              id="auth-token"
+              type="text"
+              value={token}
+              onChange={this.onTokenChange.bind(this)}
+            />
+          </div>
+          <div className="u-flex--1">
+            <label htmlFor="user-id">User Id</label>
+            <input
+              id="user-id"
+              type="text"
+              value={userId}
+              onChange={this.onUserIdChange.bind(this)}
+            />
+          </div>
         </div>
-        <div>
-          <select value={filter} onChange={this.onFilterChange.bind(this)}>
-            {allFilters.map(_filter => {
-              return (
-                <option key={_filter} value={_filter}>
-                  {filterLabels[_filter]}
-                </option>
-              );
-            })}
-          </select>
-          <select
-            value={breakdown}
-            onChange={this.onBreakdownChange.bind(this)}
-          >
-            <option value="total">Total</option>
-            <option value="not-total">By activity</option>
-          </select>
-          <select value={metric} onChange={this.onMetricChange.bind(this)}>
-            <option value="sessions">Sessions</option>
-            <option value="minutes">Minutes</option>
-          </select>
+        <div className="u-flex">
+          <div className="u-flex--1">
+            <Filters
+              filter={filter}
+              allFilters={allFilters}
+              onFilterChange={this.onFilterChange.bind(this)}
+              breakdown={breakdown}
+              onBreakdownChange={this.onBreakdownChange.bind(this)}
+              metric={metric}
+              onMetricChange={this.onMetricChange.bind(this)}
+            />
+          </div>
         </div>
         <h2>
-          {filterLabels[filter]} {metric}
+          Your {filterLabels[filter]} stats
         </h2>
-        {metric === 'sessions' || hasFullyLoaded
-          ? <BarChart width={window.innerWidth} height={300} data={aggregation}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {bars.map(bar =>
-                <Bar
-                  type="monotone"
-                  stackId="b"
-                  key={bar.key}
-                  dataKey={bar.key}
-                  fill={bar.color}
-                />
-              )}
-            </BarChart>
-          : 'loading...'}
-
-        {lastMonth
-          ? <div>
-              <h6>
-                {lastMonth.name} v. {prevMonth.name}
-              </h6>
-              <p>
-                {(lastMonth.sessions || 0) - (prevMonth.sessions || 0)}
-              </p>
-            </div>
-          : null}
-
-        <h2>Time of day frequency</h2>
-        <LineChart width={window.innerWidth} height={300} data={timeOfDay}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="amount"
-            strokeWidth="3px"
-            stroke="#86D1AC"
+        {aggregation.map(agg =>
+          <SimpleBar
+            key={agg.name}
+            label={agg.name}
+            max={aggMax}
+            value={agg.minutes}
+            suffix="minutes"
           />
-        </LineChart>
-        <h4>
-          You like to meditate in the {meditatesTimeOfDay}
-        </h4>
+        )}
+        <div className="u-flex">
+          <div className="u-flex u-flexDirection--column u-flex--1 u-textAlign--center">
+            <p className="u-flex--1">Total minutes meditated</p>
+            <p className="u-flex--1 u-bold">
+              {totalMinutes}
+            </p>
+          </div>
+          <div className="u-flex u-flexDirection--column u-flex--1 u-textAlign--center">
+            <p className="u-flex--1">Longest run streak</p>
+            <p className="u-flex--1 u-bold">
+              {longestRunStreak}
+            </p>
+          </div>
+        </div>
+        <div className="u-flex">
+          <div className="u-flex u-flexDirection--column u-flex--1 u-textAlign--center">
+            <p className="u-flex--1">Sessions completed</p>
+            <p className="u-flex--1 u-bold">
+              {totalSessions}
+            </p>
+          </div>
+          <div className="u-flex u-flexDirection--column u-flex--1 u-textAlign--center">
+            <p className="u-flex--1">Packs completed</p>
+            <p className="u-flex--1 u-bold">
+              {totalSessions}
+            </p>
+          </div>
+        </div>
+        <pre style={{ textAlign: 'left' }}>
+          {JSON.stringify(aggregation, null, '\t')}
+        </pre>
       </div>
     );
   }

@@ -30,7 +30,7 @@ export const aggregationToChartMapTime = (aggregation, formatTitle) => {
         if (!Array.isArray(aggregation[date][key])) {
           return;
         }
-        data[key] = aggregation[date][key].reduce((accum, a) => {
+        data.minutes = aggregation[date][key].reduce((accum, a) => {
           if (a.variation && a.variation.duration) {
             accum += a.variation.duration;
           }
